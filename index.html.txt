@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For Ma Ma ❤️ Fireworks & Hearts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1b1c3a 0%, #080914 100%);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            touch-action: manipulation;
+            position: relative;
+        }
+
+        /* Subtle starry twinkling background canvas */
+        #bgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Container for particles and text */
+        #interactiveLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Instruction prompt styling */
+        .instruction-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+        }
+
+        /* Particle base animations */
+        .neon-text-particle {
+            position: absolute;
+            font-weight: 800;
+            font-size: 2.5rem;
+            pointer-events: none;
+            white-space: nowrap;
+            letter-spacing: 1px;
+            animation: textBurst 1.4s cubic-bezier(0.12, 0.8, 0.32, 1) forwards;
+            filter: drop-shadow(0 0 12px currentColor);
+        }
+
+        .spark-particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkFly 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .heart-particle {
+            position: absolute;
+            font-size: 1.6rem;
+            pointer-events: none;
+            animation: heartBurst 1.5s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+            filter: drop-shadow(0 0 8px rgba(255, 105, 180, 0.8));
+        }
+
+        /* Dynamic keyframes for realistic physics explosion */
+        @keyframes textBurst {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.1) rotate(var(--rot-start));
+            }
+            25% {
+                opacity: 1;
+                transform: translate(calc(-50% + var(--dx-mid)), calc(-50% + var(--dy-mid))) scale(1.35) rotate(var(--rot-mid));
+            }
+            80% {
+                opacity: 0.9;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(-50% + var(--dx-end)), calc(-50% + var(--dy-end))) scale(0.7) rotate(var(--rot-end));
+            }
+        }
+
+        @keyframes sparkFly {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(0.1);
+            }
+        }
+
+        @keyframes heartBurst {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(calc(-50% + var(--hx-mid)), calc(-50% + var(--hy-mid))) scale(1.4) rotate(var(--h-rot));
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(-50% + var(--hx-end)), calc(-50% + var(--hy-end))) scale(0.5) rotate(calc(var(--h-rot) * 2));
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center select-none overflow-hidden">
+
+    <!-- Background Starry Canvas -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- Layer for fireworks, hearts & popped text -->
+    <div id="interactiveLayer"></div>
+
+    <!-- Center screen instruction box -->
+    <div id="instruction" class="instruction-box text-center px-6 py-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl animate-pulse">
+        <p class="text-white font-semibold text-lg sm:text-xl tracking-wide flex items-center gap-2">
+            ✨ Screen ကို တစ်ချက်စီ နှိပ်ပါ ❤️
+        </p>
+        <span class="text-xs text-pink-300 opacity-80 block mt-1">(Tap screen for Fireworks & Hearts)</span>
+    </div>
+
+    <script>
+        const bgCanvas = document.getElementById('bgCanvas');
+        const ctx = bgCanvas.getContext('2d');
+        let stars = [];
+
+        function resizeCanvas() {
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+            initStars();
+        }
+
+        function initStars() {
+            stars = [];
+            const count = Math.floor((bgCanvas.width * bgCanvas.height) / 8000);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * bgCanvas.width,
+                    y: Math.random() * bgCanvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    alpha: Math.random(),
+                    speed: Math.random() * 0.02 + 0.005
+                });
+            }
+        }
+
+        function animateStars() {
+            ctx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            stars.forEach(star => {
+                star.alpha += star.speed;
+                if (star.alpha > 1 || star.alpha < 0) {
+                    star.speed = -star.speed;
+                }
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(star.alpha)})`;
+                ctx.fill();
+            });
+            requestAnimationFrame(animateStars);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        animateStars();
+
+        const textSequence = ["I", "Love", "You", "Ma Ma"];
+        const heartEmojis = ["❤️", "💖", "💕", "💗", "💓", "💘", "✨"];
+        const brightColors = [
+            '#FF2A6D', '#05D9E8', '#00FF9F', '#FFB800', 
+            '#FF007F', '#A125EB', '#00F5D4', '#F15BB5',
+            '#FF3366', '#FF6B6B', '#4ECDC4', '#FFE66D'
+        ];
+
+        let sequenceIndex = 0;
+        let hasTapped = false;
+        const interactiveLayer = document.getElementById('interactiveLayer');
+        const instructionBox = document.getElementById('instruction');
+
+        function getRandomElement(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function triggerFireworksAndHearts(x, y) {
+            // Hide initial prompt on first tap
+            if (!hasTapped) {
+                hasTapped = true;
+                instructionBox.style.opacity = '0';
+                setTimeout(() => instructionBox.remove(), 800);
+            }
+
+            const primaryColor = getRandomElement(brightColors);
+            const currentText = textSequence[sequenceIndex];
+
+            // 1. Create Pop-up Text Particle
+            const textEl = document.createElement('div');
+            textEl.className = 'neon-text-particle';
+            textEl.innerText = currentText;
+            textEl.style.color = primaryColor;
+            textEl.style.left = `${x}px`;
+            textEl.style.top = `${y}px`;
+
+            // Adjust text size dynamically if phrase is longer
+            if (currentText.length > 3) {
+                textEl.style.fontSize = '2.2rem';
+            }
+
+            // Calculate random ballistic trajectories
+            const angle = Math.random() * Math.PI * 2;
+            const distMid = 30 + Math.random() * 40;
+            const distEnd = distMid + 40 + Math.random() * 50;
+
+            const dxMid = `${Math.cos(angle) * distMid}px`;
+            const dyMid = `${Math.sin(angle) * distMid - 40}px`; // Fly slightly upward
+            const dxEnd = `${Math.cos(angle) * distEnd}px`;
+            const dyEnd = `${Math.sin(angle) * distEnd + 50}px`; // Gravity pull down
+
+            textEl.style.setProperty('--dx-mid', dxMid);
+            textEl.style.setProperty('--dy-mid', dyMid);
+            textEl.style.setProperty('--dx-end', dxEnd);
+            textEl.style.setProperty('--dy-end', dyEnd);
+            textEl.style.setProperty('--rot-start', `${(Math.random() - 0.5) * 20}deg`);
+            textEl.style.setProperty('--rot-mid', `${(Math.random() - 0.5) * 15}deg`);
+            textEl.style.setProperty('--rot-end', `${(Math.random() - 0.5) * 35}deg`);
+
+            interactiveLayer.appendChild(textEl);
+            setTimeout(() => textEl.remove(), 1400);
+
+            // 2. Create Flying Heart Particles scattered in 360 degrees
+            const heartCount = 12 + Math.floor(Math.random() * 6);
+            for (let i = 0; i < heartCount; i++) {
+                const heartEl = document.createElement('div');
+                heartEl.className = 'heart-particle';
+                heartEl.innerText = getRandomElement(heartEmojis);
+                heartEl.style.left = `${x}px`;
+                heartEl.style.top = `${y}px`;
+
+                const hAngle = (Math.PI * 2 / heartCount) * i + (Math.random() * 0.3 - 0.15);
+                const hDistMid = 50 + Math.random() * 60;
+                const hDistEnd = hDistMid + 50 + Math.random() * 70;
+
+                const hxMid = `${Math.cos(hAngle) * hDistMid}px`;
+                const hyMid = `${Math.sin(hAngle) * hDistMid - 20}px`;
+                const hxEnd = `${Math.cos(hAngle) * hDistEnd}px`;
+                const hyEnd = `${Math.sin(hAngle) * hDistEnd + 40}px`;
+                const hRot = `${(Math.random() - 0.5) * 60}deg`;
+
+                heartEl.style.setProperty('--hx-mid', hxMid);
+                heartEl.style.setProperty('--hy-mid', hyMid);
+                heartEl.style.setProperty('--hx-end', hxEnd);
+                heartEl.style.setProperty('--hy-end', hyEnd);
+                heartEl.style.setProperty('--h-rot', hRot);
+
+                interactiveLayer.appendChild(heartEl);
+                setTimeout(() => heartEl.remove(), 1500);
+            }
+
+            // 3. Create Colorful Fireworks Sparks Explosions
+            const sparkCount = 24;
+            for (let i = 0; i < sparkCount; i++) {
+                const spark = document.createElement('div');
+                spark.className = 'spark-particle';
+                const sparkColor = Math.random() > 0.4 ? primaryColor : getRandomElement(brightColors);
+                
+                const size = 4 + Math.random() * 6;
+                spark.style.width = `${size}px`;
+                spark.style.height = `${size}px`;
+                spark.style.backgroundColor = sparkColor;
+                spark.style.boxShadow = `0 0 10px ${sparkColor}, 0 0 18px ${sparkColor}`;
+
+                const sAngle = (Math.PI * 2 / sparkCount) * i + (Math.random() * 0.2);
+                const sDist = 70 + Math.random() * 90;
+                const sx = `${Math.cos(sAngle) * sDist}px`;
+                const sy = `${Math.sin(sAngle) * sDist}px`;
+
+                spark.style.setProperty('--sx', sx);
+                spark.style.setProperty('--sy', sy);
+                spark.style.left = `${x}px`;
+                spark.style.top = `${y}px`;
+
+                interactiveLayer.appendChild(spark);
+                setTimeout(() => spark.remove(), 1100);
+            }
+
+            // Advance through sequence in loop
+            sequenceIndex = (sequenceIndex + 1) % textSequence.length;
+        }
+
+        window.addEventListener('pointerdown', (e) => {
+            // Ignore multi-touch secondary touches if needed or render for each
+            triggerFireworksAndHearts(e.clientX, e.clientY);
+        });
+
+        // Prevent accidental touch zoom or double-tap zooming on iOS
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
